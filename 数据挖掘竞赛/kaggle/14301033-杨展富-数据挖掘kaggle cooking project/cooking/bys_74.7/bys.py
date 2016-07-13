@@ -1,0 +1,151 @@
+# -*- coding: utf-8 -*-
+
+###########################################################
+# bys version:    not really good because it's simply use package
+###########################################################
+import numpy as np
+import pandas as pd
+from sklearn.naive_bayes import MultinomialNB  
+import json
+import csv
+import sys 
+reload(sys) 
+sys.setdefaultencoding('utf8') 
+sys.setdefaultencoding('gb18030')
+
+
+import pandas as pd
+import numpy as np
+import json
+import csv
+import tempfile
+from sklearn.linear_model import LogisticRegression
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.svm import LinearSVC
+from sklearn.ensemble import RandomForestClassifier
+from sklearn import tree
+from sklearn.naive_bayes import GaussianNB
+from sklearn import datasets
+from sklearn.grid_search import GridSearchCV
+
+
+
+import logging
+
+trainf = pd.read_json('train.json')
+testf = pd.read_json('test.json')
+train_x =[]
+test_x =[]
+import json
+import csv
+import tempfile
+f = open('train.json')
+data = json.load(f)
+dat= json.dumps(data)
+dats = json.loads(dat)
+#print(data[0])
+f.close()
+
+judge = 0;
+
+
+
+total_country = ['southern_us']
+total_country_number = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+total_country_material=[[]for i in range(20)]
+total_country_material[0].append('plain flour')
+total_country_material_number=[[]for i in range(20)]
+total_country_material_number[0].append(0)
+
+
+t_set = set()
+x_set = set()
+
+if __name__ == "__main__":   
+    with open('all_already_train.json') as json_file:
+        train_data = json.load(json_file) 
+        N = len(train_data)  
+	for datai in train_data:
+		t_set.add(datai['cuisine']) 
+		for ingredient in datai['ingredients']:
+			x_set.append(ingredient)   
+	traindf = pd.read_json('train.json')	
+	K = len(t_set)    
+	M = len(x_set)    
+	t_list = list(t_set)  
+	x_list = list(x_set)
+	
+	T = np.zeros(N)  
+        targets_tr = traindf['cuisine']
+	X = np.zeros([N, M])
+	
+	print "begin train"
+        for i in range(N):
+            datai = train_data[i]
+            cuisine_i = datai['cuisine']
+            cuisine_i_index = t_list.index(cuisine_i)
+            T[i] = cuisine_i_index  
+            x_i = datai['ingredients']
+            for itemj in x_i:
+                itemj_index = x_list.index(itemj)
+                X[i, itemj_index] = 1
+         
+       
+        clf = MultinomialNB().fit(X,T)
+        
+        
+        
+        print "Finish training"
+        print "begin testing"
+        with open('test.json') as json_file:
+            test_data = json.load(json_file) 
+            N_test = len(test_data)
+            
+        with open('test_prediction(bys).csv','wb') as csvfile:
+            fieldnames = ['id','cuisine']
+            writer = csv.DictWriter(csvfile, fieldnames = fieldnames)
+            writer.writeheader()
+            
+            X_test = np.zeros([N_test, M])
+            for i in range(N_test):
+                datai = test_data[i]
+                x_i = datai['ingredients']
+                id = datai['id']
+                for itemj in x_i:
+                    if itemj in x_list:
+                        itemj_index = x_list.index(itemj)
+                        X_test[i, itemj_index] = 1
+                        
+            
+            predict_target = clf.predict(X_test)
+            for i in range(N_test):
+                datai = test_data[i]
+                x_i = datai['ingredients']
+                id = datai['id']
+                cuisine = t_list[int(predict_target[i])]
+                writer.writerow({'id':id, 'cuisine':cuisine})
+"""
+print(test_x)
+
+
+vectorizer = TfidfVectorizer()
+train_x = vectorizer.fit_transform(train_x)
+test_x = vectorizer.transform(test_x)
+
+#print(train_x)
+#print(test_x)
+tuned_parameters = [
+{'penalty':['l1'],'tol':[1e-3,1e-4],'C':[1,10,100,1000]},{'penalty':['l2'],'tol':[1e-3,1e-4],
+'C':[1,10,100,1000]}]
+fun=LogisticRegression(C = 1.0, intercept_scaling=5,dual=False,fit_intercept=True,penalty='l2',tol=0.00001)
+clf = GridSearchCV(fun,tuned_parameters,cv=5,scoring=['precision','recall'])
+print(clf)
+#LogisticRegression(C = 1.0, intercept_scaling=5,dual=False,fit_intercept=True,penalty='l2',tol=0.00001)
+fun.fit(train_x,cuisine)
+
+results = fun.predict(test_x)
+testf['results'] = results
+testf.to_csv('final.csv')
+
+"""            
+        
